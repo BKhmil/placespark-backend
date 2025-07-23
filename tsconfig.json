@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "strict": true,
     "target": "ES2022",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -14,6 +13,6 @@
     "noEmitOnError": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-//    "jsx": "react-jsx"
+    "jsx": "react-jsx"
   }
 }

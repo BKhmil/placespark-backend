@@ -20,12 +20,15 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@react-email/components": "^0.3.2",
     "bcrypt": "^6.0.0",
+    "cron": "^4.3.2",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.15.1"
+    "mongoose": "^8.15.1",
+    "nodemailer": "^7.0.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -33,6 +36,8 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^24.0.0",
+    "@types/nodemailer": "^6.4.17",
+    "@types/react": "^19.1.8",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-import": "^2.31.0",
