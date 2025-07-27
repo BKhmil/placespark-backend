@@ -1,14 +1,16 @@
+import { Types } from "mongoose";
+
 export interface IToken {
-  _id: string;
+  _id: Types.ObjectId | string;
   accessToken: string;
   refreshToken: string;
-  _userId: string;
+  _userId: Types.ObjectId | string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface ITokenPayload {
-  userId: string;
+  userId: Types.ObjectId | string;
   role: string;
   name: string;
 }

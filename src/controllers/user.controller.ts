@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from "express";
+import { Types } from "mongoose";
 
 import { SUCCESS_CODES } from "../constants/success-codes.constant";
-import { RoleEnum } from "../enums/role.enum";
+import { MulterRequest } from "../interfaces/multer-request.interface";
+import { IPlaceListQuery } from "../interfaces/place.interface";
 import { ITokenPayload } from "../interfaces/token.interface";
 import {
   IUserListQuery,
@@ -64,7 +66,7 @@ class UserController {
   public async addFavorite(req: Request, res: Response, next: NextFunction) {
     try {
       const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
-      const { placeId } = req.body;
+      const placeId = req.body.placeId as Types.ObjectId | string;
       const result = await userService.addFavorite(
         tokenPayload.userId,
         placeId
@@ -78,26 +80,12 @@ class UserController {
   public async removeFavorite(req: Request, res: Response, next: NextFunction) {
     try {
       const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
-      const { placeId } = req.body;
+      const placeId = req.body.placeId as Types.ObjectId | string;
       const result = await userService.removeFavorite(
         tokenPayload.userId,
         placeId
       );
       res.json(result);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  public async isFavorite(req: Request, res: Response, next: NextFunction) {
-    try {
-      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
-      const { placeId } = req.query;
-      const result = await userService.isFavorite(
-        tokenPayload.userId,
-        String(placeId)
-      );
-      res.json({ isFavorite: result });
     } catch (err) {
       next(err);
     }
@@ -109,33 +97,34 @@ class UserController {
     next: NextFunction
   ) {
     try {
+      const query = req.query as unknown as IPlaceListQuery;
       const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
-      const result = await userService.getMyEstablishments(tokenPayload.userId);
+      const result = await userService.getMyEstablishments(tokenPayload, query);
       res.json(result);
     } catch (err) {
       next(err);
     }
   }
 
-  public async getMyReviews(req: Request, res: Response, next: NextFunction) {
-    try {
-      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
-      const result = await userService.getMyReviews(tokenPayload.userId);
-      res.json(result);
-    } catch (err) {
-      next(err);
-    }
-  }
+  // public async getMyReviews(req: Request, res: Response, next: NextFunction) {
+  //   try {
+  //     const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+  //     const result = await userService.getMyReviews(tokenPayload.userId);
+  //     res.json(result);
+  //   } catch (err) {
+  //     next(err);
+  //   }
+  // }
 
-  public async getMyRatings(req: Request, res: Response, next: NextFunction) {
-    try {
-      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
-      const result = await userService.getMyRatings(tokenPayload.userId);
-      res.json(result);
-    } catch (err) {
-      next(err);
-    }
-  }
+  // public async getMyRatings(req: Request, res: Response, next: NextFunction) {
+  //   try {
+  //     const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+  //     const result = await userService.getMyRatings(tokenPayload.userId);
+  //     res.json(result);
+  //   } catch (err) {
+  //     next(err);
+  //   }
+  // }
 
   public async getAll(req: Request, res: Response, next: NextFunction) {
     try {
@@ -168,29 +157,27 @@ class UserController {
     }
   }
 
-  public async changeRole(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { userId } = req.params;
-      const { role } = req.body;
-      const result = await userService.changeRole(userId, role as RoleEnum);
-      res.json(result);
-    } catch (err) {
-      next(err);
-    }
-  }
+  // public async changeRole(req: Request, res: Response, next: NextFunction) {
+  //   try {
+  //     const { userId } = req.params;
+  //     const { role } = req.body;
+  //     const result = await userService.changeRole(userId, role as RoleEnum);
+  //     res.json(result);
+  //   } catch (err) {
+  //     next(err);
+  //   }
+  // }
 
-  public async reassignEstablishment(
-    req: Request,
+  public async updatePhoto(
+    req: MulterRequest,
     res: Response,
     next: NextFunction
   ) {
     try {
-      const { placeId, newUserId } = req.body;
-      const result = await userService.reassignEstablishment(
-        placeId,
-        newUserId
-      );
-      res.json(result);
+      const userId = req.params.userId;
+      const file = req.file;
+      const updated = await userService.updatePhoto(userId, file);
+      res.json(updated);
     } catch (err) {
       next(err);
     }

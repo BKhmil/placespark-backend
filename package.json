@@ -22,12 +22,15 @@
   "dependencies": {
     "@react-email/components": "^0.3.2",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^1.41.3",
     "cron": "^4.3.2",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.5"
   },
   "devDependencies": {
@@ -35,6 +38,7 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/mongoose": "^5.11.96",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.0.0",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19.1.8",

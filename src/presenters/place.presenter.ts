@@ -1,18 +1,19 @@
+import { fromGeoJSON } from "../helpers/location.helpers";
 import {
-  IPlace,
   IPlaceListQuery,
   IPlaceListResponseDto,
+  IPlaceModel,
   IPlaceResponseDto,
 } from "../interfaces/place.interface";
 
 class PlacePresenter {
-  public toResponse(entity: IPlace): IPlaceResponseDto {
+  public toResponse(entity: IPlaceModel): IPlaceResponseDto {
     return {
       _id: entity._id,
       name: entity.name,
       description: entity.description,
       address: entity.address,
-      location: entity.location,
+      location: fromGeoJSON(entity.location),
       photo: entity.photo,
       tags: entity.tags,
       type: entity.type,
@@ -24,11 +25,13 @@ class PlacePresenter {
       updatedAt: entity.updatedAt,
       views: entity.views,
       contacts: entity.contacts,
+      workingHours: entity.workingHours,
+      isModerated: entity.isModerated,
     };
   }
 
   public toResponseList(
-    entities: IPlace[],
+    entities: IPlaceModel[],
     total: number,
     query: IPlaceListQuery
   ): IPlaceListResponseDto {
@@ -41,3 +44,5 @@ class PlacePresenter {
 }
 
 export const placePresenter = new PlacePresenter();
+
+// todo: add presenters for other models

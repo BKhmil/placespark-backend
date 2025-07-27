@@ -1,17 +1,24 @@
-import { FilterQuery, type PipelineStage } from "mongoose";
+import { FilterQuery, type PipelineStage, Types } from "mongoose";
 
+import { ModerateOptionsEnum } from "../enums/moderate-options.enum";
 import { PlaceListOrderEnum } from "../enums/place-list-order.enum";
-import { normalizeToArray } from "../helpers/normalize-to-array";
-import { IPlace, IPlaceListQuery } from "../interfaces/place.interface";
+import { normalizeToArray } from "../helpers/geo.helper";
+import { IPlaceListQuery, IPlaceModel } from "../interfaces/place.interface";
 import { Place } from "../models/place.model";
 
 class PlaceRepository {
   public async getList(
-    query: IPlaceListQuery
-  ): Promise<{ entities: IPlace[]; total: number }> {
-    const filterObj: FilterQuery<IPlace> = { isDeleted: false };
+    query: IPlaceListQuery,
+    isModerated: ModerateOptionsEnum
+  ): Promise<{ entities: IPlaceModel[]; total: number }> {
+    const filterObj: FilterQuery<IPlaceModel> = {};
 
-    filterObj.isModerated = true;
+    if (isModerated === ModerateOptionsEnum.TRUE) {
+      filterObj.isModerated = true;
+    }
+    if (isModerated === ModerateOptionsEnum.FALSE) {
+      filterObj.isModerated = false;
+    }
 
     if (query.name) {
       filterObj.name = { $regex: query.name, $options: "i" };
@@ -52,7 +59,7 @@ class PlaceRepository {
     }
 
     if (query.adminId) {
-      filterObj.createdBy = query.adminId;
+      filterObj.createdBy = query.adminId as Types.ObjectId;
     }
 
     const page = Number(query.page) || 1;
@@ -70,7 +77,7 @@ class PlaceRepository {
 
     // I figured out that I can have an enormous amount of different queries for filtering
     // but only one query for sorting :)
-    let entities: IPlace[] = [];
+    let entities: IPlaceModel[] = [];
     let total = 0;
     if (
       orderBy === PlaceListOrderEnum.DISTANCE &&
@@ -107,23 +114,25 @@ class PlaceRepository {
     return { entities, total, ...query };
   }
 
-  public async create(dto: Partial<IPlace>): Promise<IPlace> {
+  public async create(dto: Partial<IPlaceModel>): Promise<IPlaceModel> {
     return await Place.create(dto);
   }
 
-  public async getById(placeId: string): Promise<IPlace | null> {
+  public async getById(
+    placeId: Types.ObjectId | string
+  ): Promise<IPlaceModel | null> {
     return await Place.findById(placeId);
   }
 
   public async updateById(
-    placeId: string,
-    dto: Partial<IPlace>
-  ): Promise<IPlace | null> {
+    placeId: Types.ObjectId | string,
+    dto: Partial<IPlaceModel>
+  ): Promise<IPlaceModel | null> {
     return await Place.findByIdAndUpdate(placeId, dto, { new: true });
   }
 
-  public async softDeleteById(placeId: string): Promise<void> {
-    await Place.findByIdAndUpdate(placeId, { isDeleted: true });
+  public async deleteById(placeId: Types.ObjectId | string): Promise<void> {
+    await Place.findByIdAndDelete(placeId);
   }
 
   // public async addView(
@@ -150,6 +159,17 @@ class PlaceRepository {
 
   public async getAllTags(): Promise<string[]> {
     return await Place.distinct("tags", { isDeleted: false });
+  }
+
+  public async updatePhoto(
+    placeId: Types.ObjectId | string,
+    photoUrl: string
+  ): Promise<IPlaceModel> {
+    return await Place.findByIdAndUpdate(
+      placeId,
+      { photo: photoUrl },
+      { new: true }
+    );
   }
 }
 

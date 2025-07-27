@@ -1,5 +1,5 @@
 export const ERRORS = {
-  USER_NOT_FOUND: { message: "User not found", statusCode: 404 },
+  NOT_FOUND: { message: "Not found", statusCode: 404 },
   NO_AUTHORIZATION_HEADER: {
     message: "Authorization required",
     statusCode: 401,
@@ -43,4 +43,7 @@ export const ERRORS = {
     message: "User must be verified to perform this action",
     statusCode: 403,
   },
+  NO_FILE_UPLOADED: { message: "No file uploaded", statusCode: 400 },
 } as const;
+
+// todo: rework

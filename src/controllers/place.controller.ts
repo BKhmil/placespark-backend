@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 
 import { SUCCESS_CODES } from "../constants/success-codes.constant";
-// import { OrderEnum } from "../enums/order.enum";
+import { MulterRequest } from "../interfaces/multer-request.interface";
 import {
   IPlaceCreate,
   IPlaceListQuery,
@@ -13,20 +13,6 @@ import { placeService } from "../services/place.service";
 class PlaceController {
   public async getList(req: Request, res: Response, next: NextFunction) {
     try {
-      // const query = {
-      //   ...req.query,
-      //   isModerated: true,
-      //   page: Number(req.query.page) || 1,
-      //   limit: Number(req.query.limit) || 10,
-      //   order: (typeof req.query.order === "string" &&
-      //   Object.values(OrderEnum).includes(req.query.order as OrderEnum)
-      //     ? req.query.order
-      //     : "desc") as OrderEnum,
-      //   orderBy:
-      //     typeof req.query.orderBy === "string"
-      //       ? req.query.orderBy
-      //       : "createdAt",
-      // };
       const query = req.query as unknown as IPlaceListQuery;
       const result = await placeService.getList(query);
       res.json(result);
@@ -48,7 +34,12 @@ class PlaceController {
   public async create(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = req.body as IPlaceCreate;
-      const result = await placeService.create(dto);
+      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+      // Multer-storage-cloudinary додає file.path як url фото
+      if (req.file && req.file.path) {
+        dto.photo = req.file.path;
+      }
+      const result = await placeService.create(dto, tokenPayload.userId);
       res.status(SUCCESS_CODES.CREATED).json(result);
     } catch (err) {
       next(err);
@@ -62,6 +53,21 @@ class PlaceController {
       const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
       const result = await placeService.update(placeId, dto, tokenPayload);
       res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async updatePhoto(
+    req: MulterRequest,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const placeId = req.params.placeId;
+      const file = req.file;
+      const updated = await placeService.updatePhoto(placeId, file);
+      res.json(updated);
     } catch (err) {
       next(err);
     }

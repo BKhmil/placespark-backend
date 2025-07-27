@@ -1,3 +1,5 @@
+import { Types } from "mongoose";
+
 import { IToken } from "../interfaces/token.interface";
 import { Token } from "../models/token.model";
 
@@ -18,7 +20,9 @@ class TokenRepository {
     await Token.deleteOne({ accessToken });
   }
 
-  public async deleteAllSignsByUserId(userId: string): Promise<void> {
+  public async deleteAllSignsByUserId(
+    userId: Types.ObjectId | string
+  ): Promise<void> {
     await Token.deleteMany({ _userId: userId });
   }
 

@@ -8,7 +8,6 @@ import { UserValidator } from "../validators/user.validator";
 
 const router = Router();
 
-// region POST
 router.get("/ping", authMiddleware.checkRefreshToken, authController.ping);
 
 router.post(
@@ -30,6 +29,8 @@ router.post(
   authController.refresh
 );
 
+// todo: add change-email endpoint which set isVerified to false and send email with new link
+
 router.post(
   "/verify-email",
   authMiddleware.checkActionToken(ActionTokenTypeEnum.VERIFY_EMAIL),
@@ -42,7 +43,6 @@ router.post(
   authController.resendVerifyEmail
 );
 
-// send email
 router.post(
   "/password-forgot",
   commonMiddleware.validateBody(UserValidator.forgotPassword),
@@ -56,16 +56,12 @@ router.post(
   authController.logoutAll
 );
 
-// ask to restore account
 router.post(
   "/account-restore",
   commonMiddleware.validateBody(UserValidator.accountRestore),
   authController.accountRestore
 );
-// endregion POST
 
-// region PUT
-// email
 router.put(
   "/account-restore",
   authMiddleware.checkActionToken(ActionTokenTypeEnum.ACCOUNT_RESTORE),
@@ -81,10 +77,9 @@ router.put(
 
 router.put(
   "/password-change",
-  commonMiddleware.validateBody(UserValidator.changePassword),
   authMiddleware.checkAccessToken,
+  commonMiddleware.validateBody(UserValidator.changePassword),
   authController.changePassword
 );
-// endregion PUT
 
 export const authRouter = router;

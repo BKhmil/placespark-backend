@@ -5,6 +5,7 @@ import { OrderEnum } from "../enums/order.enum";
 import { PlaceFeatureEnum } from "../enums/place-feature.enum";
 import { PlaceListOrderEnum } from "../enums/place-list-order.enum";
 import { PlaceTypeEnum } from "../enums/place-type.enum";
+import { PlaceWorkingDayEnum } from "../enums/place-working-day.enum";
 
 export class PlaceValidator {
   private static name = joi.string().min(1).max(100).trim();
@@ -14,7 +15,6 @@ export class PlaceValidator {
     lat: joi.number(),
     lng: joi.number(),
   });
-  private static photo = joi.string().allow("").trim();
   private static tags = joi.array().items(joi.string());
   private static type = joi
     .string()
@@ -36,19 +36,40 @@ export class PlaceValidator {
       email: joi.string().pattern(regexConstant.EMAIL).allow("").optional(),
     })
     .optional();
+  private static workingHour = joi.object({
+    day: joi
+      .string()
+      .valid(...Object.values(PlaceWorkingDayEnum))
+      .required(),
+    from: joi
+      .string()
+      .pattern(regexConstant.REGEX_TIME_HH_MM)
+      .allow("")
+      .optional(),
+    to: joi
+      .string()
+      .pattern(regexConstant.REGEX_TIME_HH_MM)
+      .allow("")
+      .optional(),
+    closed: joi.boolean().optional(),
+  });
+  private static workingHours = joi
+    .array()
+    .length(7)
+    .items(PlaceValidator.workingHour);
 
   public static create = joi.object({
     name: this.name.required(),
     description: this.description.optional(),
     address: this.address.required(),
     location: this.location.required(),
-    photo: this.photo.optional(),
     tags: this.tags.optional(),
     type: this.type.required(),
     features: this.features.optional(),
     averageCheck: this.averageCheck.optional(),
     createdBy: this.createdBy.required(),
     contacts: this.contacts.optional(),
+    workingHours: this.workingHours.optional(),
   });
 
   public static update = joi.object({
@@ -56,12 +77,12 @@ export class PlaceValidator {
     description: this.description.optional(),
     address: this.address.optional(),
     location: this.location.optional(),
-    photo: this.photo.optional(),
     tags: this.tags.optional(),
     type: this.type.optional(),
     features: this.features.optional(),
     averageCheck: this.averageCheck.optional(),
     contacts: this.contacts.optional(),
+    workingHours: this.workingHours.optional(),
   });
 
   public static getListQuery = joi.object({

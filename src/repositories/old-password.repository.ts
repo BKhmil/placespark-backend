@@ -1,3 +1,5 @@
+import { Types } from "mongoose";
+
 import { IOldPassword } from "../interfaces/old-password.interface";
 import { OldPassword } from "../models/old-password.model";
 
@@ -6,7 +8,7 @@ class OldPasswordRepository {
     return await OldPassword.create(dto);
   }
 
-  public async getMany(userId: string) {
+  public async getMany(userId: Types.ObjectId | string) {
     return await OldPassword.find({ _userId: userId });
   }
 
@@ -14,7 +16,7 @@ class OldPasswordRepository {
     return await OldPassword.deleteMany({ password });
   }
 
-  public async deleteManyByUserId(userId: string) {
+  public async deleteManyByUserId(userId: Types.ObjectId | string) {
     return await OldPassword.deleteMany({ _userId: userId });
   }
 

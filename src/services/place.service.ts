@@ -1,63 +1,166 @@
-// import { OrderEnum } from "../enums/order.enum";
+import { Types } from "mongoose";
+
+import { ModerateOptionsEnum } from "../enums/moderate-options.enum";
 import { RoleEnum } from "../enums/role.enum";
 import { ApiError } from "../errors/api.error";
+import {
+  deleteFile,
+  deleteFolder,
+  getCloudinaryPublicId,
+} from "../helpers/cloudinary.helper";
+import { idsEqual } from "../helpers/equals.helper";
+import { toGeoJSON } from "../helpers/location.helpers";
 import {
   IPlace,
   IPlaceListQuery,
   IPlaceListResponseDto,
+  IPlaceModel,
+  IPlaceResponseDto,
 } from "../interfaces/place.interface";
 import { ITokenPayload } from "../interfaces/token.interface";
 import { placePresenter } from "../presenters/place.presenter";
 import { placeRepository } from "../repositories/place.repository";
-// import { reviewRepository } from "../repositories/review.repository";
+import { userRepository } from "../repositories/user.repository";
 
 class PlaceService {
   public async getList(query: IPlaceListQuery): Promise<IPlaceListResponseDto> {
-    const { entities, total } = await placeRepository.getList(query);
+    const { entities, total } = await placeRepository.getList(
+      query,
+      ModerateOptionsEnum.TRUE
+    );
     return placePresenter.toResponseList(entities, total, query);
   }
 
-  public async getById(placeId: string): Promise<IPlace | null> {
-    return await placeRepository.getById(placeId);
+  public async getById(
+    placeId: Types.ObjectId | string
+  ): Promise<IPlaceResponseDto | null> {
+    const place = await this.placeExistsOrThrow(placeId);
+    return placePresenter.toResponse(place);
   }
 
-  public async create(dto: Partial<IPlace>): Promise<IPlace> {
-    return await placeRepository.create(dto);
+  public async create(
+    dto: Partial<IPlace>,
+    userId: Types.ObjectId | string
+  ): Promise<IPlaceResponseDto> {
+    const place = await placeRepository.create({
+      ...dto,
+      location: toGeoJSON(dto.location),
+      createdBy: userId as Types.ObjectId,
+    });
+
+    // at the time I was thinking about several ways to inform client about new record on <user.admin_establishments>
+    //#1: it's obvious that if we don't get an error on client after request that means we've added it successfully so we can just update local client state
+    //#2: we can return the place with the <user>, but it's not a good idea because REST principles say that we should return only what we've asked for
+    //#3: final decision, after successful request we just make a new request from client to /api/user/me to get the updated user
+    await userRepository.addAdminEstablishment(userId, place._id);
+    return placePresenter.toResponse(place);
+  }
+
+  public async updatePhoto(
+    placeId: Types.ObjectId | string,
+    file: Express.Multer.File
+  ) {
+    try {
+      const place = await this.placeExistsOrThrow(placeId);
+
+      const oldPhotoUrl = place?.photo;
+      let oldPublicId: string | null = null;
+
+      if (oldPhotoUrl) {
+        oldPublicId = getCloudinaryPublicId(oldPhotoUrl);
+        if (oldPublicId) {
+          try {
+            await deleteFile(oldPublicId);
+          } catch (deleteError) {
+            console.warn("Failed to delete old place photo:", deleteError);
+          }
+        }
+      }
+
+      const updatedPlace = await placeRepository.updatePhoto(
+        placeId,
+        file.path
+      );
+
+      return placePresenter.toResponse(updatedPlace);
+    } catch (err) {
+      const newPublicId = getCloudinaryPublicId(file.path);
+      if (newPublicId) {
+        try {
+          await deleteFile(newPublicId);
+        } catch (deleteError) {
+          console.warn(
+            "Failed to delete new place photo after error:",
+            deleteError
+          );
+        }
+      }
+
+      throw new ApiError(
+        err.message ? err.message : "Server error",
+        (err as ApiError).statusCode ? (err as ApiError).statusCode : 500
+      );
+    }
   }
 
   public async update(
-    placeId: string,
+    placeId: Types.ObjectId | string,
     dto: Partial<IPlace>,
     tokenPayload: ITokenPayload
-  ): Promise<IPlace | null> {
+  ): Promise<IPlaceResponseDto | null> {
     const place = await this.placeExistsOrThrow(placeId);
     this.checkHasAccessOrThrow(
-      tokenPayload.userId,
       tokenPayload.role,
+      tokenPayload.userId,
       place.createdBy
     );
-    return await placeRepository.updateById(placeId, dto);
+
+    if (dto.location) {
+      (dto as unknown as Partial<IPlaceModel>).location = toGeoJSON(
+        dto.location
+      );
+    }
+
+    return placePresenter.toResponse(
+      await placeRepository.updateById(
+        place._id,
+        dto as unknown as Partial<IPlaceModel>
+      )
+    );
   }
 
   // public async moderate(
   //   placeId: string,
   //   isModerated: boolean
   // ): Promise<IPlace | null> {
-  //   void (await this.placeExistsOrThrow(placeId));
+  //   await this.placeExistsOrThrow(placeId);
   //   return await placeRepository.updateById(placeId, { isModerated });
   // }
 
   public async delete(
-    placeId: string,
+    placeId: Types.ObjectId | string,
     tokenPayload: ITokenPayload
   ): Promise<void> {
     const place = await this.placeExistsOrThrow(placeId);
+
     this.checkHasAccessOrThrow(
-      tokenPayload.userId,
       tokenPayload.role,
+      tokenPayload.userId,
       place.createdBy
     );
-    await placeRepository.softDeleteById(placeId);
+
+    try {
+      await deleteFolder(`placespark/places/${placeId}`);
+    } catch (deleteError) {
+      console.warn(
+        "Failed to delete place folder from Cloudinary:",
+        deleteError
+      );
+    }
+
+    await placeRepository.updateById(placeId, { photo: "" });
+    await placeRepository.deleteById(placeId);
+    await userRepository.removeAdminEstablishment(place.createdBy, placeId);
   }
 
   // public async addView(
@@ -105,24 +208,22 @@ class PlaceService {
     return await placeRepository.getAllTags();
   }
 
-  private async placeExistsOrThrow(placeId: string): Promise<IPlace> {
+  public async placeExistsOrThrow(placeId: Types.ObjectId | string) {
     const place = await placeRepository.getById(placeId);
-    if (!place) {
-      throw new ApiError("Place not found", 404);
-    }
-
+    if (!place) throw new ApiError("Place not found", 404);
     return place;
   }
 
   private checkHasAccessOrThrow(
-    userId: string,
     role: string,
-    placeUserId: string
-  ) {
+    userId: Types.ObjectId | string,
+    placeUserId: Types.ObjectId | string //createdBy
+  ): void {
     if (role === RoleEnum.SUPERADMIN) {
       return;
     }
-    if (userId !== placeUserId.toString()) {
+
+    if (!idsEqual(userId, placeUserId)) {
       throw new ApiError("You are not allowed to access this place", 403);
     }
   }

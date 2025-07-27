@@ -30,15 +30,21 @@ export const AccountRestoreEmail: React.FC<Readonly<IProps>> = ({
 
       <a
         href={
-          context.frontUrl + "/auth/account/restore?token=" + context.actionToken
+          context.frontUrl +
+          "/auth/account/restore?token=" +
+          context.actionToken
         }
         target="_blank"
         style={{
           color: "#A981DC",
         }}
       >
-        {context.frontUrl + "/auth/account/restore?token=" + context.actionToken}
+        {context.frontUrl +
+          "/auth/account/restore?token=" +
+          context.actionToken}
       </a>
     </div>
   );
 };
+
+// todo: add more templates for other scenarios

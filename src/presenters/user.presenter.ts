@@ -15,6 +15,9 @@ class UserPresenter {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       role: entity.role,
+      admin_establishments: entity.admin_establishments,
+      favorites: entity.favorites,
+      photo: entity.photo || "",
     };
   }
 

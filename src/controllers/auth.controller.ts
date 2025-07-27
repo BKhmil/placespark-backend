@@ -47,8 +47,8 @@ class AuthController {
 
       if (isDeleted) {
         throw new ApiError(
-          ERRORS.USER_NOT_FOUND.message,
-          ERRORS.USER_NOT_FOUND.statusCode
+          ERRORS.NOT_FOUND.message,
+          ERRORS.NOT_FOUND.statusCode
         );
       } else {
         const dto = req.body as ISignInRequestDto;

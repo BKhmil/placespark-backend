@@ -2,11 +2,12 @@ import { model, Schema } from "mongoose";
 
 import { PlaceFeatureEnum } from "../enums/place-feature.enum";
 import { PlaceTypeEnum } from "../enums/place-type.enum";
-import { IPlace } from "../interfaces/place.interface";
+import { PlaceWorkingDayEnum } from "../enums/place-working-day.enum";
+import { IPlaceModel } from "../interfaces/place.interface";
 
-const placeSchema = new Schema<IPlace>(
+const placeSchema = new Schema<IPlaceModel>(
   {
-    name: { type: String, required: true },
+    name: { type: String, required: true, unique: true },
     description: { type: String, default: "" },
     address: { type: String, required: true },
     location: {
@@ -31,13 +32,12 @@ const placeSchema = new Schema<IPlace>(
     },
     averageCheck: { type: Number, default: 0 },
     rating: { type: Number, default: 0 },
-    createdBy: { type: String, required: true },
+    createdBy: { type: Schema.Types.ObjectId, required: true, ref: "User" },
     isModerated: { type: Boolean, default: false },
-    isDeleted: { type: Boolean, default: false },
     views: {
       type: [
         {
-          userId: { type: String, required: true },
+          userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
           date: { type: Date, required: true },
         },
       ],
@@ -48,6 +48,21 @@ const placeSchema = new Schema<IPlace>(
       tg: { type: String, default: "" },
       email: { type: String, default: "" },
     },
+    workingHours: {
+      type: [
+        {
+          day: {
+            type: String,
+            enum: Object.values(PlaceWorkingDayEnum),
+            required: true,
+          },
+          from: { type: String },
+          to: { type: String },
+          closed: { type: Boolean, default: false },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true, versionKey: false }
 );
@@ -55,4 +70,4 @@ const placeSchema = new Schema<IPlace>(
 placeSchema.index({ location: "2dsphere" });
 placeSchema.index({ name: "text" });
 
-export const Place = model<IPlace>("places", placeSchema);
+export const Place = model<IPlaceModel>("places", placeSchema);

@@ -1,5 +1,6 @@
-import { FilterQuery } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 
+import { RoleEnum } from "../enums/role.enum";
 import {
   ISignUpRequestDto,
   IUser,
@@ -28,11 +29,13 @@ class UserRepository {
     return { entities, total };
   }
 
-  public async create(dto: ISignUpRequestDto): Promise<IUser> {
+  public async create(
+    dto: ISignUpRequestDto & { role: RoleEnum }
+  ): Promise<IUser> {
     return await User.create(dto);
   }
 
-  public async getById(userId: string): Promise<IUser> {
+  public async getById(userId: Types.ObjectId | string): Promise<IUser> {
     return await User.findById(userId);
   }
 
@@ -40,42 +43,76 @@ class UserRepository {
     return await User.findOne({ email });
   }
 
-  public async updateById(userId: string, dto: Partial<IUser>): Promise<IUser> {
+  public async updateById(
+    userId: Types.ObjectId | string,
+    dto: Partial<IUser>
+  ): Promise<IUser> {
     return await User.findByIdAndUpdate(userId, dto, { new: true });
   }
 
-  public async softDeleteById(userId: string): Promise<void> {
+  public async softDeleteById(userId: Types.ObjectId | string): Promise<void> {
     await User.findByIdAndUpdate(userId, {
       isDeleted: true,
       deletedAt: new Date(),
+      isVerified: false,
     });
   }
 
   public async addFavorite(
-    userId: string,
-    placeId: string
+    userId: Types.ObjectId | string,
+    placeId: Types.ObjectId | string
   ): Promise<IUser | null> {
     return await User.findByIdAndUpdate(
-      userId,
+      { _id: userId },
+      // since I have $addToSet, it will not add the placeId if it already exists
+      // so I don't need to check if the placeId already exists
       { $addToSet: { favorites: placeId } },
       { new: true }
     );
   }
 
   public async removeFavorite(
-    userId: string,
-    placeId: string
+    userId: Types.ObjectId | string,
+    placeId: Types.ObjectId | string
   ): Promise<IUser | null> {
     return await User.findByIdAndUpdate(
-      userId,
+      { _id: userId },
       { $pull: { favorites: placeId } },
       { new: true }
     );
   }
 
-  public async isFavorite(userId: string, placeId: string): Promise<boolean> {
-    const user = await User.findOne({ _id: userId, favorites: placeId });
-    return !!user;
+  public async addAdminEstablishment(
+    userId: Types.ObjectId | string,
+    placeId: Types.ObjectId | string
+  ): Promise<IUser | null> {
+    return await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { admin_establishments: placeId } },
+      { new: true }
+    );
+  }
+
+  public async removeAdminEstablishment(
+    userId: Types.ObjectId | string,
+    placeId: Types.ObjectId | string
+  ): Promise<IUser | null> {
+    return await User.findByIdAndUpdate(
+      userId,
+      { $pull: { admin_establishments: placeId } },
+      { new: true }
+    );
+  }
+
+  public async updatePhoto(
+    userId: Types.ObjectId | string,
+    photoUrl: string
+  ): Promise<IUser> {
+    return await User.findByIdAndUpdate(
+      userId,
+      { photo: photoUrl },
+      { new: true }
+    );
   }
 }
 

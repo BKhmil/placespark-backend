@@ -1,7 +1,10 @@
+import { Types } from "mongoose";
+
 import { envConfig } from "../configs/env.config";
 import { ERRORS } from "../constants/errors.constant";
 import { ActionTokenTypeEnum } from "../enums/action-token-type.enum";
 import { EmailTypeEnum } from "../enums/email-type.enum";
+import { RoleEnum } from "../enums/role.enum";
 import { ApiError } from "../errors/api.error";
 import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
 import {
@@ -27,11 +30,15 @@ import { tokenService } from "./token.service";
 class AuthService {
   public async signUp(dto: ISignUpRequestDto): Promise<ISignInResponseDto> {
     const password = await passwordService.hashPassword(dto.password);
-    const user = await userRepository.create({ ...dto, password });
+    const user = await userRepository.create({
+      ...dto,
+      password,
+      role: RoleEnum.USER,
+    });
 
     const tokens = tokenService.generateTokens({
       userId: user._id,
-      role: user.role,
+      role: RoleEnum.USER,
       name: user.name,
     });
     await tokenRepository.create({ ...tokens, _userId: user._id });
@@ -258,7 +265,7 @@ class AuthService {
 
   private async isNewPasswordUniqueOrThrow(
     newPassword: string,
-    userId: string
+    userId: Types.ObjectId | string
   ): Promise<IUser> {
     const user = await userRepository.getById(userId);
 

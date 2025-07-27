@@ -1,14 +1,24 @@
+import { Types } from "mongoose";
+
 import { OrderEnum } from "../enums/order.enum";
 import { PlaceTypeEnum } from "../enums/place-type.enum";
+import { PlaceWorkingDayEnum } from "../enums/place-working-day.enum";
+
+export interface IWorkingHour {
+  day: PlaceWorkingDayEnum;
+  from?: string;
+  to?: string;
+  closed?: boolean;
+}
 
 export interface IPlace {
-  _id: string;
+  _id: Types.ObjectId | string;
   name: string;
   description: string;
   address: string;
   location: {
-    type: "Point";
-    coordinates: [number, number]; // [longitude, latitude]
+    lng: number;
+    lat: number;
   };
   photo: string;
   tags: string[];
@@ -16,17 +26,47 @@ export interface IPlace {
   features: string[];
   averageCheck: number;
   rating: number;
-  createdBy: string;
+  createdBy: Types.ObjectId | string;
   isModerated: boolean;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
-  views?: { userId: string; date: Date }[];
+  views?: { userId: Types.ObjectId | string; date: Date }[];
   contacts?: {
     phone?: string;
     tg?: string;
     email?: string;
   };
+  workingHours?: IWorkingHour[];
+}
+
+export interface IPlaceModel {
+  _id: Types.ObjectId | string;
+  name: string;
+  description: string;
+  address: string;
+  location: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  photo: string;
+  tags: string[];
+  type: PlaceTypeEnum;
+  features: string[];
+  averageCheck: number;
+  rating: number;
+  createdBy: Types.ObjectId | string;
+  isModerated: boolean;
+  isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  views?: { userId: Types.ObjectId | string; date: Date }[];
+  contacts?: {
+    phone?: string;
+    tg?: string;
+    email?: string;
+  };
+  workingHours?: IWorkingHour[];
 }
 
 export type IPlaceResponseDto = Pick<
@@ -47,6 +87,8 @@ export type IPlaceResponseDto = Pick<
   | "updatedAt"
   | "views"
   | "contacts"
+  | "workingHours"
+  | "isModerated"
 >;
 
 export interface IPlaceListResponseDto extends IPlaceListQuery {
@@ -62,7 +104,12 @@ export type IPlaceCreate = Omit<
   | "createdAt"
   | "updatedAt"
   | "views"
->;
+> & {
+  location: {
+    lng: number;
+    lat: number;
+  };
+};
 
 export type IPlaceUpdate = Omit<
   IPlace,
@@ -86,7 +133,7 @@ export type IPlaceListQuery = {
   features?: string[];
   isModerated?: boolean;
   isDeleted?: boolean;
-  adminId?: string;
+  adminId?: Types.ObjectId | string;
   order: OrderEnum;
   orderBy: string;
   latitude?: number;
