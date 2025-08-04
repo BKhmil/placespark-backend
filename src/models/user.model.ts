@@ -10,11 +10,11 @@ const userSchema = new Schema(
     role: { type: String, enum: Object.values(RoleEnum), required: true },
     name: { type: String, required: true },
     photo: { type: String, default: "" },
-    favorites: { type: [Schema.Types.ObjectId], default: [], ref: "Place" },
+    favorites: { type: [Schema.Types.ObjectId], default: [], ref: "places" },
     admin_establishments: {
       type: [Schema.Types.ObjectId],
       default: [],
-      ref: "Place",
+      ref: "places",
     },
     isDeleted: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },

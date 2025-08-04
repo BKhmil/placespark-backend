@@ -94,6 +94,31 @@ class NewsController {
     }
   }
 
+  public async getByPlaceId(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const placeId = req.params.placeId;
+      const { type, page, limit } = req.query;
+
+      const pageNum = page ? parseInt(page as string) : 1;
+      const limitNum = limit ? parseInt(limit as string) : 10;
+
+      const result = await newsService.getByPlaceId(
+        placeId,
+        type as string,
+        pageNum,
+        limitNum
+      );
+
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // public async getByPlaceId(
   //   req: Request,
   //   res: Response,

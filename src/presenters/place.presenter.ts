@@ -4,6 +4,7 @@ import {
   IPlaceListResponseDto,
   IPlaceModel,
   IPlaceResponseDto,
+  IPlaceResponseWithViewsCountDto,
 } from "../interfaces/place.interface";
 
 class PlacePresenter {
@@ -23,8 +24,31 @@ class PlacePresenter {
       createdBy: entity.createdBy,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
-      views: entity.views,
       contacts: entity.contacts,
+      workingHours: entity.workingHours,
+      isModerated: entity.isModerated,
+    };
+  }
+  public toResponseWithViewsCount(
+    entity: IPlaceModel & { viewsCount: number }
+  ): IPlaceResponseWithViewsCountDto {
+    return {
+      _id: entity._id,
+      name: entity.name,
+      description: entity.description,
+      address: entity.address,
+      location: fromGeoJSON(entity.location),
+      photo: entity.photo,
+      tags: entity.tags,
+      type: entity.type,
+      features: entity.features,
+      averageCheck: entity.averageCheck,
+      rating: entity.rating,
+      createdBy: entity.createdBy,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+      contacts: entity.contacts,
+      viewsCount: entity.viewsCount,
       workingHours: entity.workingHours,
       isModerated: entity.isModerated,
     };
@@ -40,6 +64,10 @@ class PlacePresenter {
       total,
       ...query,
     };
+  }
+
+  public toResponseArray(entities: IPlaceModel[]): IPlaceResponseDto[] {
+    return entities.map(this.toResponse);
   }
 }
 

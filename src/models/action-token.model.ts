@@ -7,7 +7,7 @@ const actionTokenSchema = new Schema(
   {
     token: { type: String, required: true },
     type: { type: String, required: true, enum: ActionTokenTypeEnum },
-    _userId: { type: Schema.Types.ObjectId, required: true, ref: "User" }, // ref is for future extension
+    _userId: { type: Schema.Types.ObjectId, required: true, ref: "users" }, // ref is for future extension
   },
   { timestamps: true, versionKey: false }
 );

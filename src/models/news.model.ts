@@ -5,7 +5,7 @@ import { INews } from "../interfaces/news.interface";
 
 const newsSchema = new Schema(
   {
-    placeId: { type: Schema.Types.ObjectId, required: true, ref: "Place" },
+    placeId: { type: Schema.Types.ObjectId, required: true, ref: "places" },
     type: { type: String, enum: Object.values(NewsTypeEnum), required: true },
     title: { type: String, required: true },
     text: { type: String, required: true },

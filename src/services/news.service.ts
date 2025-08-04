@@ -52,6 +52,31 @@ class NewsService {
     return await newsRepository.getById(newsId);
   }
 
+  public async getByPlaceId(
+    placeId: Types.ObjectId | string,
+    type?: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ news: INews[]; total: number }> {
+    // Перевіряємо чи існує заклад і чи він модерований
+    await this.isPlaceModerated(placeId);
+
+    const skip = (page - 1) * limit;
+    const filter: Record<string, unknown> = { placeId };
+
+    // Додаємо фільтр по типу якщо він вказаний
+    if (type) {
+      filter.type = type;
+    }
+
+    const [news, total] = await Promise.all([
+      newsRepository.getByPlaceIdWithPagination(placeId, filter, skip, limit),
+      newsRepository.getCountByPlaceId(placeId, filter),
+    ]);
+
+    return { news, total };
+  }
+
   // public async getByPlaceId(
   //   placeId: Types.ObjectId | string
   // ): Promise<INews[]> {

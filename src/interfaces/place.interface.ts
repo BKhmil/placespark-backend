@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { OrderEnum } from "../enums/order.enum";
 import { PlaceTypeEnum } from "../enums/place-type.enum";
 import { PlaceWorkingDayEnum } from "../enums/place-working-day.enum";
+import { IPlaceView } from "./place-view.interface";
 
 export interface IWorkingHour {
   day: PlaceWorkingDayEnum;
@@ -31,7 +32,6 @@ export interface IPlace {
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
-  views?: { userId: Types.ObjectId | string; date: Date }[];
   contacts?: {
     phone?: string;
     tg?: string;
@@ -60,7 +60,6 @@ export interface IPlaceModel {
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
-  views?: { userId: Types.ObjectId | string; date: Date }[];
   contacts?: {
     phone?: string;
     tg?: string;
@@ -85,11 +84,32 @@ export type IPlaceResponseDto = Pick<
   | "createdBy"
   | "createdAt"
   | "updatedAt"
-  | "views"
   | "contacts"
   | "workingHours"
   | "isModerated"
 >;
+export type IPlaceResponseWithViewsCountDto = Pick<
+  IPlace,
+  | "_id"
+  | "name"
+  | "description"
+  | "address"
+  | "location"
+  | "photo"
+  | "tags"
+  | "type"
+  | "features"
+  | "averageCheck"
+  | "rating"
+  | "createdBy"
+  | "createdAt"
+  | "updatedAt"
+  | "contacts"
+  | "workingHours"
+  | "isModerated"
+> & {
+  viewsCount: number;
+};
 
 export interface IPlaceListResponseDto extends IPlaceListQuery {
   data: IPlaceResponseDto[];
@@ -98,12 +118,7 @@ export interface IPlaceListResponseDto extends IPlaceListQuery {
 
 export type IPlaceCreate = Omit<
   IPlace,
-  | "createdBy"
-  | "isModerated"
-  | "isDeleted"
-  | "createdAt"
-  | "updatedAt"
-  | "views"
+  "createdBy" | "isModerated" | "isDeleted" | "createdAt" | "updatedAt"
 > & {
   location: {
     lng: number;
@@ -113,12 +128,7 @@ export type IPlaceCreate = Omit<
 
 export type IPlaceUpdate = Omit<
   IPlace,
-  | "createdBy"
-  | "isModerated"
-  | "isDeleted"
-  | "createdAt"
-  | "updatedAt"
-  | "views"
+  "createdBy" | "isModerated" | "isDeleted" | "createdAt" | "updatedAt"
 >;
 
 export type IPlaceListQuery = {
@@ -139,3 +149,10 @@ export type IPlaceListQuery = {
   latitude?: number;
   longitude?: number;
 };
+
+export interface IPlaceGetViewsStatsQuery {
+  from?: string;
+  to?: string;
+}
+
+export type IPlaceViewStats = { views: IPlaceView[]; count: number };

@@ -6,7 +6,7 @@ const tokenSchema = new Schema(
   {
     accessToken: { type: String, required: true },
     refreshToken: { type: String, required: true },
-    _userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    _userId: { type: Schema.Types.ObjectId, required: true, ref: "users" },
   },
   { timestamps: true, versionKey: false }
 );

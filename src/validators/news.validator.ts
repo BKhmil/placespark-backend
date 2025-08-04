@@ -17,4 +17,13 @@ export class NewsValidator {
     title: this.title.optional(),
     text: this.text.optional(),
   });
+
+  public static getListQuery = joi.object({
+    page: joi.number().optional(),
+    limit: joi.number().optional(),
+    type: joi
+      .string()
+      .valid(...Object.values(NewsTypeEnum))
+      .optional(),
+  });
 }

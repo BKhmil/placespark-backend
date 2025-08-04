@@ -106,26 +106,6 @@ class UserController {
     }
   }
 
-  // public async getMyReviews(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
-  //     const result = await userService.getMyReviews(tokenPayload.userId);
-  //     res.json(result);
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // }
-
-  // public async getMyRatings(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
-  //     const result = await userService.getMyRatings(tokenPayload.userId);
-  //     res.json(result);
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // }
-
   public async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const query = req.query as unknown as IUserListQuery;
@@ -178,6 +158,26 @@ class UserController {
       const file = req.file;
       const updated = await userService.updatePhoto(userId, file);
       res.json(updated);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async getMyReviews(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+      const result = await userService.getMyReviews(tokenPayload);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async getMyFavorites(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+      const result = await userService.getMyFavorites(tokenPayload);
+      res.json(result);
     } catch (err) {
       next(err);
     }

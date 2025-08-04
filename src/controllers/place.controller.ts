@@ -4,6 +4,7 @@ import { SUCCESS_CODES } from "../constants/success-codes.constant";
 import { MulterRequest } from "../interfaces/multer-request.interface";
 import {
   IPlaceCreate,
+  IPlaceGetViewsStatsQuery,
   IPlaceListQuery,
   IPlaceUpdate,
 } from "../interfaces/place.interface";
@@ -117,35 +118,34 @@ class PlaceController {
   //     next(err);
   //   }
   // }
-  //
-  // public async addView(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     const { placeId } = req.params;
-  //     const userId = req.res.locals.tokenPayload?.userId || "anonymous";
-  //     const date = new Date();
-  //     const result = await placeService.addView(placeId, userId, date);
-  //     res.json(result);
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // }
-  //
-  // public async getViewsStats(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     const { placeId } = req.params;
-  //     const { from, to } = req.query;
-  //     const fromDate = from ? new Date(String(from)) : new Date(0);
-  //     const toDate = to ? new Date(String(to)) : new Date();
-  //     const result = await placeService.getViewsStats(
-  //       placeId,
-  //       fromDate,
-  //       toDate
-  //     );
-  //     res.json({ count: result });
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // }
+
+  public async addView(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { placeId } = req.params;
+      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+      await placeService.addView(placeId, tokenPayload);
+      res.sendStatus(SUCCESS_CODES.NO_CONTENT);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async getViewsStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { placeId } = req.params;
+      const { from, to } = req.query as unknown as IPlaceGetViewsStatsQuery;
+      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+      const result = await placeService.getViewsStats(
+        placeId,
+        from,
+        to,
+        tokenPayload
+      );
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
   //
   // public async getAnalytics(req: Request, res: Response, next: NextFunction) {
   //   try {

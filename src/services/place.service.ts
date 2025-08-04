@@ -1,5 +1,7 @@
 import { Types } from "mongoose";
 
+import { ERRORS } from "../constants/errors.constant";
+import { LIMITS } from "../constants/limits.constant";
 import { ModerateOptionsEnum } from "../enums/moderate-options.enum";
 import { RoleEnum } from "../enums/role.enum";
 import { ApiError } from "../errors/api.error";
@@ -10,16 +12,21 @@ import {
 } from "../helpers/cloudinary.helper";
 import { idsEqual } from "../helpers/equals.helper";
 import { toGeoJSON } from "../helpers/location.helpers";
+import { hasToObject } from "../helpers/mongo.helper";
 import {
   IPlace,
   IPlaceListQuery,
   IPlaceListResponseDto,
   IPlaceModel,
   IPlaceResponseDto,
+  IPlaceResponseWithViewsCountDto,
+  IPlaceViewStats,
 } from "../interfaces/place.interface";
+import { IPlaceView } from "../interfaces/place-view.interface";
 import { ITokenPayload } from "../interfaces/token.interface";
 import { placePresenter } from "../presenters/place.presenter";
 import { placeRepository } from "../repositories/place.repository";
+import { placeViewRepository } from "../repositories/place-view.repository";
 import { userRepository } from "../repositories/user.repository";
 
 class PlaceService {
@@ -33,15 +40,39 @@ class PlaceService {
 
   public async getById(
     placeId: Types.ObjectId | string
-  ): Promise<IPlaceResponseDto | null> {
+  ): Promise<IPlaceResponseWithViewsCountDto | null> {
     const place = await this.placeExistsOrThrow(placeId);
-    return placePresenter.toResponse(place);
+    const views = await placeViewRepository.getStats(
+      placeId,
+      new Date(0), // since I want to get views count from the all time
+      new Date()
+    );
+    let placeObj: IPlaceModel;
+    if (hasToObject(place)) {
+      placeObj = place.toObject();
+    } else {
+      placeObj = place as IPlaceModel;
+    }
+    return placePresenter.toResponseWithViewsCount({
+      ...placeObj,
+      viewsCount: views.length,
+    });
   }
 
   public async create(
     dto: Partial<IPlace>,
     userId: Types.ObjectId | string
   ): Promise<IPlaceResponseDto> {
+    const user = await userRepository.getById(userId);
+    if (
+      user.admin_establishments.length >= LIMITS.MAX_ESTABLISHMENT_ADMIN_PLACES
+    ) {
+      throw new ApiError(
+        `Maximum number of places reached for establishment admin (${LIMITS.MAX_ESTABLISHMENT_ADMIN_PLACES})`,
+        400
+      );
+    }
+
     const place = await placeRepository.create({
       ...dto,
       location: toGeoJSON(dto.location),
@@ -59,7 +90,7 @@ class PlaceService {
   public async updatePhoto(
     placeId: Types.ObjectId | string,
     file: Express.Multer.File
-  ) {
+  ): Promise<IPlaceResponseDto> {
     try {
       const place = await this.placeExistsOrThrow(placeId);
 
@@ -163,21 +194,15 @@ class PlaceService {
     await userRepository.removeAdminEstablishment(place.createdBy, placeId);
   }
 
-  // public async addView(
-  //   placeId: string,
-  //   userId: string,
-  //   date: Date
-  // ): Promise<IPlace | null> {
-  //   return await placeRepository.addView(placeId, userId, date);
-  // }
-  //
-  // public async getViewsStats(
-  //   placeId: string,
-  //   from: Date,
-  //   to: Date
-  // ): Promise<number> {
-  //   return await placeRepository.getViewsStats(placeId, from, to);
-  // }
+  public async addView(
+    placeId: Types.ObjectId | string,
+    tokenPayload: ITokenPayload
+  ): Promise<IPlaceView> {
+    return await placeViewRepository.addView(
+      placeId,
+      tokenPayload.userId as Types.ObjectId
+    );
+  }
   //
   // public async getAnalytics() {
   //   const places = await placeRepository.getList({
@@ -208,9 +233,30 @@ class PlaceService {
     return await placeRepository.getAllTags();
   }
 
-  public async placeExistsOrThrow(placeId: Types.ObjectId | string) {
+  public async getViewsStats(
+    placeId: Types.ObjectId | string,
+    from: string,
+    to: string,
+    tokenPayload: ITokenPayload
+  ): Promise<IPlaceViewStats> {
+    const place = await this.placeExistsOrThrow(placeId);
+    this.checkHasAccessOrThrow(
+      tokenPayload.role,
+      tokenPayload.userId,
+      place.createdBy
+    );
+    const fromDate = from ? new Date(from) : new Date(0);
+    const toDate = to ? new Date(to) : new Date();
+    const views = await placeViewRepository.getStats(placeId, fromDate, toDate);
+    return { views, count: views.length };
+  }
+
+  private async placeExistsOrThrow(
+    placeId: Types.ObjectId | string
+  ): Promise<IPlaceModel> {
     const place = await placeRepository.getById(placeId);
-    if (!place) throw new ApiError("Place not found", 404);
+    if (!place)
+      throw new ApiError(ERRORS.NOT_FOUND.message, ERRORS.NOT_FOUND.statusCode);
     return place;
   }
 

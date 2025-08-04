@@ -72,7 +72,7 @@ class FileUploadMiddleware {
     next: NextFunction
   ) {
     try {
-      if (!req.file || !req.file.buffer) {
+      if (!req.file) {
         throw new ApiError(
           ERRORS.NO_FILE_UPLOADED.message,
           ERRORS.NO_FILE_UPLOADED.statusCode

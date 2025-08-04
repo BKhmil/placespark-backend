@@ -20,26 +20,41 @@ router.get(
   userController.getMyEstablishments
 );
 
-// router.get(
-//   "/me/reviews",
-//   authMiddleware.checkAccessToken,
-//   authMiddleware.checkRole([RoleEnum.CRITIC, RoleEnum.USER]),
-//   userController.getMyReviews
-// );
-
-// router.get(
-//   "/me/ratings",
-//   authMiddleware.checkAccessToken,
-//   authMiddleware.checkRole([RoleEnum.CRITIC, RoleEnum.USER]),
-//   userController.getMyRatings
-// );
-
 router.get(
   "/all",
   authMiddleware.checkAccessToken,
   authMiddleware.checkRole([RoleEnum.SUPERADMIN]),
   commonMiddleware.validateQuery(UserValidator.getListQuery),
   userController.getAll
+);
+
+router.post(
+  "/favorites",
+  authMiddleware.checkAccessToken,
+  authMiddleware.checkRole([RoleEnum.USER, RoleEnum.CRITIC]),
+  userController.addFavorite
+);
+
+router.delete(
+  "/favorites",
+  authMiddleware.checkAccessToken,
+  authMiddleware.checkRole([RoleEnum.USER, RoleEnum.CRITIC]),
+  userController.removeFavorite
+);
+
+router.get(
+  "/me/reviews",
+  authMiddleware.checkAccessToken,
+  authMiddleware.checkVerifiedUser,
+  authMiddleware.checkRole([RoleEnum.USER, RoleEnum.CRITIC]),
+  userController.getMyReviews
+);
+
+router.get(
+  "/me/favorites",
+  authMiddleware.checkAccessToken,
+  authMiddleware.checkRole([RoleEnum.USER, RoleEnum.CRITIC]),
+  userController.getMyFavorites
 );
 
 router.get(
@@ -109,23 +124,5 @@ router.delete(
 //   authMiddleware.checkRole([RoleEnum.SUPERADMIN]),
 //   userController.reassignEstablishment
 // );
-
-router.post(
-  "/favorites",
-  authMiddleware.checkAccessToken,
-  authMiddleware.checkRole([
-    RoleEnum.USER,
-    RoleEnum.CRITIC,
-    // In my opinion RoleEnum.SUPERADMIN and RoleEnum.ESTABLISHMENT_ADMIN don't need this option
-  ]),
-  userController.addFavorite
-);
-
-router.delete(
-  "/favorites",
-  authMiddleware.checkAccessToken,
-  authMiddleware.checkRole([RoleEnum.USER, RoleEnum.CRITIC]),
-  userController.removeFavorite
-);
 
 export const userRouter = router;

@@ -34,15 +34,6 @@ const placeSchema = new Schema<IPlaceModel>(
     rating: { type: Number, default: 0 },
     createdBy: { type: Schema.Types.ObjectId, required: true, ref: "User" },
     isModerated: { type: Boolean, default: false },
-    views: {
-      type: [
-        {
-          userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
-          date: { type: Date, required: true },
-        },
-      ],
-      default: [],
-    },
     contacts: {
       phone: { type: String, default: "" },
       tg: { type: String, default: "" },

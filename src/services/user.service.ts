@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 import { ERRORS } from "../constants/errors.constant";
+import { LIMITS } from "../constants/limits.constant";
 import { ModerateOptionsEnum } from "../enums/moderate-options.enum";
 import { RoleEnum } from "../enums/role.enum";
 import { ApiError } from "../errors/api.error";
@@ -25,6 +26,7 @@ import { placePresenter } from "../presenters/place.presenter";
 import { userPresenter } from "../presenters/user.presenter";
 import { actionTokenRepository } from "../repositories/action-token.repository";
 import { placeRepository } from "../repositories/place.repository";
+import { reviewRepository } from "../repositories/review.repository";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 
@@ -71,10 +73,25 @@ class UserService {
     userId: Types.ObjectId | string,
     placeId: Types.ObjectId | string
   ): Promise<IUser> {
-    const user = await userRepository.addFavorite(userId, placeId);
-    if (!user)
+    const user = await this.findUserOrThrow(
+      userId,
+      ERRORS.NOT_FOUND.message,
+      ERRORS.NOT_FOUND.statusCode
+    );
+
+    await this.isPlaceModerated(placeId);
+
+    if (user.favorites && user.favorites.length >= LIMITS.MAX_FAVORITE_PLACES) {
+      throw new ApiError(
+        `Maximum number of favorite places reached (${LIMITS.MAX_FAVORITE_PLACES})`,
+        400
+      );
+    }
+
+    const updatedUser = await userRepository.addFavorite(userId, placeId);
+    if (!updatedUser)
       throw new ApiError(ERRORS.NOT_FOUND.message, ERRORS.NOT_FOUND.statusCode);
-    return user;
+    return updatedUser;
   }
 
   public async removeFavorite(
@@ -108,15 +125,6 @@ class UserService {
     return placePresenter.toResponseList(entities, total, query);
   }
 
-  // public async getMyReviews(userId: Types.ObjectId | string) {
-  //   return await reviewService.getByUser(userId);
-  // }
-
-  // public async getMyRatings(userId: Types.ObjectId | string) {
-  //   const reviews = await reviewService.getByUser(userId);
-  //   return reviews.filter((r) => r.rating > 0);
-  // }
-
   public async updateUser(
     userId: Types.ObjectId | string,
     dto: Partial<IUser>
@@ -143,7 +151,6 @@ class UserService {
       );
     }
 
-    // Змінюємо роль на USER, очищаємо фото, робимо неверифікованим, очищаємо заклади та позначаємо як видаленого
     await userRepository.updateById(tokenPayload.userId, {
       role: RoleEnum.USER,
       photo: "",
@@ -248,6 +255,36 @@ class UserService {
   //   return await placeRepository.updateById(placeId, { createdBy: newUserId });
   // }
 
+  public async getMyReviews(tokenPayload: ITokenPayload) {
+    await this.findUserOrThrow(
+      tokenPayload.userId,
+      ERRORS.NOT_FOUND.message,
+      ERRORS.NOT_FOUND.statusCode
+    );
+
+    return await reviewRepository.getByUserWithPlace(tokenPayload.userId);
+  }
+
+  public async getMyFavorites(tokenPayload: ITokenPayload) {
+    const user = await this.findUserOrThrow(
+      tokenPayload.userId,
+      ERRORS.NOT_FOUND.message,
+      ERRORS.NOT_FOUND.statusCode
+    );
+
+    if (!user.favorites || user.favorites.length === 0) {
+      return [];
+    }
+
+    const limitedFavorites = user.favorites.slice(
+      0,
+      LIMITS.MAX_FAVORITE_PLACES
+    );
+
+    const places = await placeRepository.getByIds(limitedFavorites);
+    return placePresenter.toResponseArray(places);
+  }
+
   private async findUserOrThrow(
     userId: Types.ObjectId | string,
     errMessage: string,
@@ -257,6 +294,14 @@ class UserService {
     if (!user) throw new ApiError(errMessage, errCode);
     return user;
   }
+
+  private isPlaceModerated = async (placeId: Types.ObjectId | string) => {
+    const place = await placeRepository.getById(placeId);
+    if (!place)
+      throw new ApiError(ERRORS.NOT_FOUND.message, ERRORS.NOT_FOUND.statusCode);
+    if (!place.isModerated) throw new ApiError("Place is not moderated", 403);
+    return place;
+  };
 }
 
 export const userService = new UserService();

@@ -1,0 +1,4 @@
+export const LIMITS = {
+  MAX_ESTABLISHMENT_ADMIN_PLACES: 1,
+  MAX_FAVORITE_PLACES: 12,
+} as const;

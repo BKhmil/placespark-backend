@@ -111,4 +111,9 @@ export class PlaceValidator {
       .valid(...Object.values(PlaceListOrderEnum))
       .default(PlaceListOrderEnum.CREATED_AT),
   });
+
+  public static getViewsStatsQuery = joi.object({
+    from: joi.date().iso().required(),
+    to: joi.date().iso().required(),
+  });
 }

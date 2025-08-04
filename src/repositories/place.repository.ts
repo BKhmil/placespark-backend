@@ -124,6 +124,15 @@ class PlaceRepository {
     return await Place.findById(placeId);
   }
 
+  public async getByIds(
+    placeIds: (Types.ObjectId | string)[]
+  ): Promise<IPlaceModel[]> {
+    return await Place.find({
+      _id: { $in: placeIds },
+      isModerated: true,
+    });
+  }
+
   public async updateById(
     placeId: Types.ObjectId | string,
     dto: Partial<IPlaceModel>

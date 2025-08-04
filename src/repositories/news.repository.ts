@@ -38,6 +38,25 @@ class NewsRepository {
   ): Promise<INews | null> {
     return await News.findByIdAndDelete(newsId);
   }
+
+  public async getByPlaceIdWithPagination(
+    placeId: Types.ObjectId | string,
+    filter: Record<string, unknown>,
+    skip: number,
+    limit: number
+  ): Promise<INews[]> {
+    return await News.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+  }
+
+  public async getCountByPlaceId(
+    placeId: Types.ObjectId | string,
+    filter: Record<string, unknown>
+  ): Promise<number> {
+    return await News.countDocuments(filter);
+  }
 }
 
 export const newsRepository = new NewsRepository();
